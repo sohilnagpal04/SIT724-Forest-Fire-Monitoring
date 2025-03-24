@@ -3,18 +3,18 @@ import csv
 import json
 from datetime import datetime
 
-# Set your correct serial port here (use ls /dev/tty.* on Mac or dmesg on Linux)
-ser = serial.Serial('/dev/tty.usbmodem1301', 9600, timeout=1)
+# Set your serial port
+ser = serial.Serial('/dev/tty.usbmodem1101', 9600, timeout=1)
 
-# Generate a unique filename with timestamp
+# Timestamped CSV filename
 timestamp_now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 filename = f'baseline_data_{timestamp_now}.csv'
 
-# Open CSV file and write header
+# Open CSV file
 csv_file = open(filename, mode='w', newline='')
 csv_writer = csv.writer(csv_file)
 csv_writer.writerow([
-    'Timestamp', 'Uptime(s)', 'Voltage(V)', 'Temp(C)', 
+    'Timestamp', 'Uptime(s)', 'Voltage(V)', 'Temp(C)',
     'Humidity(%)', 'PacketID', 'RSSI (dBm)', 'SNR (dB)'
 ])
 
@@ -26,17 +26,22 @@ snr = None
 
 try:
     while True:
-        # Read and decode the line from serial safely
         line = ser.readline().decode('utf-8', errors='ignore').strip()
+
         if not line:
             continue
 
-        print(f"RAW >> {line}")  # Optional: live debug
+        print(f"RAW >> {line}")
 
+        # Clean up possible garbage characters at the end
+        line = line.strip().replace('>', '').replace('=', '')
+
+        # Parse JSON
         if line.startswith("{") and line.endswith("}"):
             try:
                 current_data = json.loads(line)
             except json.JSONDecodeError:
+                print("⚠️ Skipping invalid JSON line:", line)
                 continue
 
         elif line.startswith("RSSI:"):
@@ -51,7 +56,7 @@ try:
             except:
                 snr = None
 
-            # Log once we have complete data
+            # Once all 3 parts are ready, log it
             if current_data:
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 csv_writer.writerow([
@@ -64,11 +69,12 @@ try:
                     rssi,
                     snr
                 ])
-                csv_file.flush()  # Ensure it's written immediately
+                csv_file.flush()  # Force write to disk
 
-                print(f"🟢 {timestamp} | ID {current_data.get('id')} | V={current_data.get('voltage')}V | RSSI={rssi} | SNR={snr}\n")
+                print(f"🟢 {timestamp} | ID {current_data.get('id')} | "
+                      f"V={current_data.get('voltage')}V | RSSI={rssi} | SNR={snr}\n")
 
-                # Reset values for next round
+                # Reset for next packet
                 current_data = {}
                 rssi = None
                 snr = None

@@ -31,7 +31,6 @@ void setup() {
   rf95.setFrequency(RF95_FREQ);
   Serial.println("LoRa receiver ready");
 
-  // Enable built-in LED
   pinMode(LED_BUILTIN, OUTPUT);
 }
 
@@ -41,10 +40,16 @@ void loop() {
     uint8_t len = sizeof(buf);
 
     if (rf95.recv(buf, &len)) {
-      String received = String((char*)buf);
-      Serial.println(received);  // Raspberry Pi script can parse this
+      // Ensure the received buffer is null-terminated
+      if (len < RH_RF95_MAX_MESSAGE_LEN) {
+        buf[len] = '\0';  // Null-terminate safely
+      }
 
-      // Print RSSI and SNR
+      String received = String((char*)buf);
+      received.trim(); // Remove whitespace/newlines
+      Serial.println(received);  // Clean JSON line
+
+      // RSSI & SNR
       int rssi = rf95.lastRssi();
       float snr = rf95.lastSNR();
 
@@ -53,7 +58,7 @@ void loop() {
       Serial.print("SNR: ");
       Serial.println(snr);
 
-      // Blink LED once after successful receive
+      // Blink LED after packet received
       digitalWrite(LED_BUILTIN, HIGH);
       delay(100);
       digitalWrite(LED_BUILTIN, LOW);
