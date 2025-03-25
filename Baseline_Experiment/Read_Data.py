@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 # Set your serial port
-ser = serial.Serial('/dev/tty.usbmodem1101', 9600, timeout=1)
+ser = serial.Serial('/dev/tty.usbmodem11401', 9600, timeout=1)
 
 # Timestamped CSV filename
 timestamp_now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
