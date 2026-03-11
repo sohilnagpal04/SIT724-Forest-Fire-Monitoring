@@ -25,6 +25,11 @@ The main goals of this project are:
 The monitoring system consists of three main components.
 
 
+The system consists of a LoRa-based sensor node that transmits environmental data to a gateway, which forwards the information to a Raspberry Pi backend for storage and visualisation.
+
+![System Architecture](images/system_architecture.png)
+
+
 
 ### Data Flow
 
